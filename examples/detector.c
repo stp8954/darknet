@@ -184,6 +184,47 @@ static void print_cocos(FILE *fp, char *image_path, box *boxes, float **probs, i
     }
 }
 
+static void print_aic(FILE *fp, char *image_path, box *boxes, float **probs, int num_boxes, int classes, int w, int h, char **names)
+{
+    int i, j;
+    int image_id = get_coco_image_id(image_path);
+    fprintf(fp, "\"%s\":[",image_path);
+    int add = 0; 
+     for(i = 0; i < num_boxes; ++i){
+        float xmin = boxes[i].x - boxes[i].w/2.;
+        float xmax = boxes[i].x + boxes[i].w/2.;
+        float ymin = boxes[i].y - boxes[i].h/2.;
+        float ymax = boxes[i].y + boxes[i].h/2.;
+
+        if (xmin < 0) xmin = 0;
+        if (ymin < 0) ymin = 0;
+        if (xmax > w) xmax = w;
+        if (ymax > h) ymax = h;
+
+       // float bx = xmin;
+       // float by = ymin;
+       // float bw = xmax - xmin;
+       // float bh = ymax - ymin;
+
+
+
+
+
+       
+        for(j = 0; j < classes; ++j){
+            if (probs[i][j] && probs[i][j] > 0.2){
+                   fprintf(fp, "{\"class\":\"%s\", \"confidence\":%.2f,\"xmax\":%.2f ,\"xmin\":%.2f,\"ymax\":%.2f,\"ymin\":%.2f},\n", names[j], probs[i][j],xmax, xmin, ymax, ymin);
+
+            }
+            else{
+
+           } 
+        }
+
+    }
+        fprintf(fp,"],");
+}
+
 void print_detector_detections(FILE **fps, char *id, box *boxes, float **probs, int total, int classes, int w, int h)
 {
     int i, j;
@@ -471,7 +512,9 @@ void validate_detector(char *datacfg, char *cfgfile, char *weightfile, char *out
             get_region_boxes(l, w, h, net.w, net.h, thresh, probs, boxes, 0, 0, map, .5, 0);
             if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, classes, nms);
             if (coco){
-                print_cocos(fp, path, boxes, probs, l.w*l.h*l.n, classes, w, h);
+               // print_cocos(fp, path, boxes, probs, l.w*l.h*l.n, classes, w, h);
+              // fprintf(stderr, "printing aic data");
+               print_aic(fp, path, boxes, probs, l.w*l.h*l.n, classes, w, h, names);
             } else if (imagenet){
                 print_imagenet_detections(fp, i+t-nthreads+1, boxes, probs, l.w*l.h*l.n, classes, w, h);
             } else {
@@ -707,3 +750,4 @@ void run_detector(int argc, char **argv)
         demo(cfg, weights, thresh, cam_index, filename, names, classes, frame_skip, prefix, avg, hier_thresh, width, height, fps, fullscreen);
     }
 }
+
